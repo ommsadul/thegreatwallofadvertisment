@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   description: "Position-priced pixel ad wall MVP",
 };
 
+import { Navigation } from "@/components/Navigation";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,7 +33,10 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", spaceGrotesk.variable, ibmPlexMono.variable, "font-sans", geist.variable)}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Navigation />
+        {children}
+      </body>
     </html>
   );
 }
