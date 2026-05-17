@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
-import { fetchWebsitePreview } from "@/lib/ad/website-preview";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { parseIntegerLike } from "@/lib/wall/serialization";
 
 export type FinalizeCheckoutResult = {
   ok: boolean;
@@ -19,13 +19,22 @@ type ReservationRow = {
   id: string;
   customer_email: string;
   status: "pending" | "completed" | "expired" | "cancelled";
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  x1: number | string;
+  y1: number | string;
+  x2: number | string;
+  y2: number | string;
   quote_cents: number;
   completed_at: string | null;
   paid_at: string | null;
+};
+
+type AdDraftRow = {
+  id: string;
+  reservation_id: string | null;
+  target_url: string;
+  stored_image_url: string | null;
+  headline: string | null;
+  status: "draft" | "ready" | "failed" | "published";
 };
 
 function isLegacyBlockedScreenshotUrl(value: string | null | undefined): boolean {
@@ -101,6 +110,69 @@ export async function finalizeCheckoutSession(
 
   const reservation = reservationData as ReservationRow;
   const nowIso = new Date().toISOString();
+  const x1 = parseIntegerLike(reservation.x1);
+  const y1 = parseIntegerLike(reservation.y1);
+  const x2 = parseIntegerLike(reservation.x2);
+  const y2 = parseIntegerLike(reservation.y2);
+
+  if (x1 === null || y1 === null || x2 === null || y2 === null) {
+    return {
+      ok: false,
+      state: "error",
+      message: "Reservation coordinates are invalid.",
+      reservationId: reservation.id,
+    };
+  }
+
+  const coordinatePayload = {
+    x1: x1.toString(),
+    y1: y1.toString(),
+    x2: x2.toString(),
+    y2: y2.toString(),
+  };
+
+  const adDraftIdFromMetadata = session.metadata?.ad_draft_id?.trim() || null;
+  let adDraft: AdDraftRow | null = null;
+
+  if (adDraftIdFromMetadata) {
+    const { data: adDraftData, error: adDraftError } = await supabase
+      .from("ad_drafts")
+      .select("id,reservation_id,target_url,stored_image_url,headline,status")
+      .eq("id", adDraftIdFromMetadata)
+      .maybeSingle<AdDraftRow>();
+
+    if (adDraftError) {
+      return {
+        ok: false,
+        state: "error",
+        message: `Failed to load ad draft: ${adDraftError.message}`,
+        reservationId: reservation.id,
+      };
+    }
+
+    if (!adDraftData) {
+      return {
+        ok: false,
+        state: "error",
+        message: "Checkout referenced an ad draft that no longer exists.",
+        reservationId: reservation.id,
+      };
+    }
+
+    if (
+      adDraftData.reservation_id &&
+      adDraftData.reservation_id !== reservation.id
+    ) {
+      return {
+        ok: false,
+        state: "error",
+        message: "Checkout ad draft is attached to a different reservation.",
+        reservationId: reservation.id,
+      };
+    }
+
+    adDraft = adDraftData;
+  }
 
   if (reservation.status !== "completed") {
     const paymentIntentId = extractPaymentIntentId(session.payment_intent);
@@ -127,7 +199,7 @@ export async function finalizeCheckoutSession(
 
   const { data: existingSubmission, error: existingSubmissionError } = await supabase
     .from("ad_submissions")
-    .select("id,target_url,image_url,headline,status")
+    .select("id,target_url,image_url,headline,status,ad_draft_id")
     .eq("reservation_id", reservation.id)
     .maybeSingle();
 
@@ -143,45 +215,44 @@ export async function finalizeCheckoutSession(
   let submissionId = existingSubmission?.id as string | undefined;
 
   if (existingSubmission?.id) {
-    let nextImageUrl =
-      typeof existingSubmission.image_url === "string"
-        ? existingSubmission.image_url
-        : null;
-    let nextHeadline =
-      typeof existingSubmission.headline === "string"
+    const nextImageUrl =
+      adDraft?.stored_image_url ??
+      (isLegacyBlockedScreenshotUrl(existingSubmission.image_url)
+        ? null
+        : typeof existingSubmission.image_url === "string"
+          ? existingSubmission.image_url
+          : null);
+    const nextHeadline =
+      adDraft?.headline ??
+      (typeof existingSubmission.headline === "string"
         ? existingSubmission.headline
-        : null;
-
-    const existingTargetUrl =
-      typeof existingSubmission.target_url === "string"
+        : null);
+    const nextTargetUrl =
+      adDraft?.target_url ??
+      (typeof existingSubmission.target_url === "string"
         ? existingSubmission.target_url
-        : "";
+        : "");
 
-    if (isLegacyBlockedScreenshotUrl(nextImageUrl)) {
-      nextImageUrl = null;
-    }
-
-    if (existingTargetUrl && (!nextImageUrl || !nextHeadline)) {
-      const preview = await fetchWebsitePreview(existingTargetUrl, 5000);
-
-      if (!nextImageUrl && (preview.imageUrl || preview.screenshotUrl)) {
-        nextImageUrl = preview.imageUrl ?? preview.screenshotUrl;
-      }
-
-      if (!nextHeadline && preview.headline) {
-        nextHeadline = preview.headline;
-      }
-    }
-
-    const shouldPromoteStatus = existingSubmission.status === "pending_review";
+    const shouldPromoteStatus =
+      existingSubmission.status === "pending_review" && adDraft?.status !== "failed";
+    const shouldUpdateDraft = adDraft?.id && existingSubmission.ad_draft_id !== adDraft.id;
+    const shouldUpdateTarget = nextTargetUrl !== existingSubmission.target_url;
     const shouldUpdateImage = nextImageUrl !== existingSubmission.image_url;
     const shouldUpdateHeadline = nextHeadline !== existingSubmission.headline;
 
-    if (shouldPromoteStatus || shouldUpdateImage || shouldUpdateHeadline) {
+    if (
+      shouldPromoteStatus ||
+      shouldUpdateDraft ||
+      shouldUpdateTarget ||
+      shouldUpdateImage ||
+      shouldUpdateHeadline
+    ) {
       const { error: updateSubmissionError } = await supabase
         .from("ad_submissions")
         .update({
           status: shouldPromoteStatus ? "approved" : existingSubmission.status,
+          ad_draft_id: adDraft?.id ?? existingSubmission.ad_draft_id,
+          target_url: nextTargetUrl,
           image_url: nextImageUrl,
           headline: nextHeadline,
         })
@@ -199,29 +270,29 @@ export async function finalizeCheckoutSession(
   }
 
   if (!submissionId) {
-    const targetUrl = session.metadata?.target_url ?? "";
-    let derivedImageUrl = session.metadata?.image_url || null;
-    let derivedHeadline = session.metadata?.headline || null;
+    const targetUrl = adDraft?.target_url ?? session.metadata?.target_url ?? "";
+    let derivedImageUrl =
+      adDraft?.stored_image_url ?? session.metadata?.image_url ?? null;
+    const derivedHeadline =
+      adDraft?.headline ?? session.metadata?.headline ?? null;
 
     if (isLegacyBlockedScreenshotUrl(derivedImageUrl)) {
       derivedImageUrl = null;
     }
 
-    if (targetUrl && (!derivedImageUrl || !derivedHeadline)) {
-      const preview = await fetchWebsitePreview(targetUrl, 5000);
-
-      if (!derivedImageUrl && (preview.imageUrl || preview.screenshotUrl)) {
-        derivedImageUrl = preview.imageUrl ?? preview.screenshotUrl;
-      }
-
-      if (!derivedHeadline && preview.headline) {
-        derivedHeadline = preview.headline;
-      }
+    if (!targetUrl) {
+      return {
+        ok: false,
+        state: "error",
+        message: "Checkout session is missing ad destination data.",
+        reservationId: reservation.id,
+      };
     }
 
     const { data: insertedSubmission, error: insertSubmissionError } = await supabase
       .from("ad_submissions")
       .insert({
+        ad_draft_id: adDraft?.id ?? null,
         reservation_id: reservation.id,
         customer_email:
           session.customer_details?.email ??
@@ -231,10 +302,7 @@ export async function finalizeCheckoutSession(
         image_url: derivedImageUrl,
         headline: derivedHeadline,
         status: "approved",
-        x1: reservation.x1,
-        y1: reservation.y1,
-        x2: reservation.x2,
-        y2: reservation.y2,
+        ...coordinatePayload,
         quote_cents: reservation.quote_cents,
       })
       .select("id")
@@ -282,6 +350,29 @@ export async function finalizeCheckoutSession(
     };
   }
 
+  if (adDraft?.id && adDraft.status !== "published") {
+    const { error: publishDraftError } = await supabase
+      .from("ad_drafts")
+      .update({
+        reservation_id: reservation.id,
+        status: "published",
+        customer_email:
+          session.customer_details?.email ??
+          session.customer_email ??
+          reservation.customer_email,
+      })
+      .eq("id", adDraft.id);
+
+    if (publishDraftError) {
+      return {
+        ok: false,
+        state: "error",
+        message: `Failed to publish ad draft: ${publishDraftError.message}`,
+        reservationId: reservation.id,
+      };
+    }
+  }
+
   const { data: existingRegion, error: existingRegionError } = await supabase
     .from("pixel_regions")
     .select("id")
@@ -303,10 +394,7 @@ export async function finalizeCheckoutSession(
 
     const { error: insertRegionError } = await supabase.from("pixel_regions").insert({
       submission_id: submissionId,
-      x1: reservation.x1,
-      y1: reservation.y1,
-      x2: reservation.x2,
-      y2: reservation.y2,
+      ...coordinatePayload,
       lease_ends_at: leaseEndsAt,
       published_at: leaseBase,
     });

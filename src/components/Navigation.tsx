@@ -3,54 +3,48 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Globe, Info, HelpCircle, Plus } from "lucide-react";
+import styles from "./Navigation.module.css";
 
 const navItems = [
-  { name: "Explore", href: "/", icon: Globe },
-  { name: "About", href: "/about", icon: Info },
-  { name: "FAQ", href: "/faq", icon: HelpCircle },
+  { name: "About", href: "/about" },
+  { name: "FAQ", href: "/faq" },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4">
-      <nav className="flex items-center gap-1 p-1 rounded border border-white/20 bg-black/60 backdrop-blur-md shadow-xl">
+    <nav className={styles.referenceNav} aria-label="Primary navigation">
+      <Link href="/" className={styles.brand}>
+        <span className={styles.brandText}>
+          thegreatwallofadvertisment
+        </span>
+      </Link>
+
+      <div className={styles.navLinks}>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          const Icon = item.icon;
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "relative flex items-center gap-2 px-3 py-1.5 rounded transition-colors duration-150 font-mono text-[11px] uppercase tracking-wider",
-                isActive
-                  ? "text-yellow-200 bg-white/10"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              )}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(isActive && styles.activeLink)}
             >
-              <Icon size={14} className={cn(
-                "transition-colors",
-                isActive ? "text-yellow-200" : "text-white/40"
-              )} />
-              <span>{item.name}</span>
+              {item.name}
             </Link>
           );
         })}
-        
-        <div className="w-px h-4 mx-1 bg-white/10" />
 
         <Link
           href="/#buy"
-          className="flex items-center gap-2 px-3 py-1.5 rounded font-mono text-[11px] uppercase tracking-wider bg-yellow-200 text-black hover:bg-yellow-300 transition-colors font-bold"
+          aria-current={pathname === "/" ? "page" : undefined}
+          className={cn(styles.claimLink, pathname === "/" && styles.activeClaimLink)}
         >
-          <Plus size={14} />
-          <span>Buy Pixels</span>
+          Claim pixels
         </Link>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }

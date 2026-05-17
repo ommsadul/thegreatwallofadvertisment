@@ -53,6 +53,24 @@ body {
 }
 
 :root {
+  --font-sans: var(--font-space-grotesk), "Aptos Display", "Segoe UI", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "Cascadia Mono", "SFMono-Regular", monospace;
+  --wall-paper: #f7f7f5;
+  --wall-paper-soft: #fbfbfa;
+  --wall-surface: #eeeeec;
+  --wall-surface-strong: #e4e4e1;
+  --wall-card: rgba(255, 255, 255, 0.94);
+  --wall-card-solid: #ffffff;
+  --wall-ink: #111111;
+  --wall-muted: #6b6b68;
+  --wall-muted-soft: #8f8f8a;
+  --wall-line: rgba(17, 17, 17, 0.1);
+  --wall-line-strong: rgba(17, 17, 17, 0.18);
+  --wall-selection: #0057ff;
+  --wall-reserved: #c49a00;
+  --wall-success: #237246;
+  --wall-error: #b42318;
+  --wall-warning: #8a5a00;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

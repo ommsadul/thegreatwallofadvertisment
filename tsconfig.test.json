@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "outDir": ".tmp-tests",
+    "incremental": false,
+    "isolatedModules": false
+  },
+  "include": [
+    "tests/**/*.ts",
+    "src/lib/ad/**/*.ts",
+    "src/lib/pricing-zones.ts",
+    "src/lib/pricing.ts",
+    "src/lib/selection.ts",
+    "src/lib/wall/**/*.ts"
+  ]
+}

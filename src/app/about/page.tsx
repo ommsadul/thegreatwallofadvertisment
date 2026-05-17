@@ -1,127 +1,232 @@
 import Link from "next/link";
-import { Zap, Globe, ShieldCheck, Target, Layers, Cpu } from "lucide-react";
+import type { CSSProperties } from "react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  CreditCard,
+  MapPinned,
+  MousePointer2,
+  ScanSearch,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import styles from "./about.module.css";
+
+const flowSteps = [
+  {
+    icon: MousePointer2,
+    title: "Select a region",
+    text: "Pan the wall, switch to Select, and drag the exact rectangle you want people to notice",
+  },
+  {
+    icon: ScanSearch,
+    title: "See the quote",
+    text: "The wall calculates size, coordinates, total pixels, and price before you commit",
+  },
+  {
+    icon: CreditCard,
+    title: "Reserve and pay",
+    text: "Lock the region, attach your destination link, and finish through checkout",
+  },
+  {
+    icon: MapPinned,
+    title: "Go live",
+    text: "Your ad becomes a clickable location on the public map for the lease term",
+  },
+];
+
+const ownership = [
+  "A visible coordinate range on an infinite wall",
+  "A clickable destination for your campaign or project",
+  "A fixed $2-per-pixel quote before checkout",
+  "A stored ad preview that publishes after payment",
+  "A one-year lease so the wall keeps moving",
+];
+
+const useCases = [
+  "Product launches",
+  "Indie portfolios",
+  "Fundraisers",
+  "Event pages",
+  "Local shops",
+  "Creator drops",
+  "Communities",
+  "Newsletter launches",
+];
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-black text-white/90 font-mono selection:bg-yellow-200 selection:text-black pb-24">
-      {/* Background Grid Effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03]" 
-           style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', size: '40px 40px', backgroundSize: '40px 40px' }} 
-      />
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <span className={styles.eyebrow}>Visible internet real estate</span>
+        <h1>Own a tiny piece of internet space</h1>
+        <p>
+          The Great Wall of Advertisement is an infinite pixel ad map where brands,
+          creators, and projects can claim visible space, attach a link, and
+          make a small public mark that people can revisit.
+        </p>
+        <div className={styles.heroStats} aria-label="Wall facts">
+          <span><strong>$2</strong> per pixel</span>
+          <span><strong>365</strong> day lease</span>
+          <span><strong>Live</strong> clickable map</span>
+        </div>
+        <div className={styles.actions}>
+          <Link href="/#buy" className={styles.primaryAction}>
+            Claim pixels
+          </Link>
+          <Link href="/faq" className={styles.secondaryAction}>
+            See the FAQ
+            <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 border-b border-white/10 overflow-hidden">
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-6">
-          <div className="inline-block px-3 py-1 border border-yellow-200/30 text-yellow-200 text-[10px] uppercase tracking-[0.3em] mb-4">
-            Established 2026 // v1.0.4-Infinite
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter leading-none">
-            The World is <span className="text-yellow-200">Infinite</span>.<br />
-            So is your <span className="text-white border-b-4 border-yellow-200">Impact.</span>
-          </h1>
-          <p className="max-w-xl mx-auto text-sm text-white/60 leading-relaxed pt-4">
-            We've taken the legendary 2005 concept and evolved it for the modern web. 
-            No boundaries. No limits. Just pure, unadulterated spatial ownership on 
-            a canvas that stretches as far as your imagination.
+      <section className={styles.ideaSection} aria-label="Why the wall exists">
+        <div className={styles.sectionCopy}>
+          <span>Why it exists</span>
+          <h2>A simple internet stunt, rebuilt as a usable ad map</h2>
+          <p>
+            The original pixel-wall idea was powerful because anyone could
+            understand it: buy a visible square, add a link, and become part of
+            the page. This version keeps that clarity, but adds modern selection,
+            quoting, stored ad previews, checkout, and leases so the wall can
+            stay active instead of becoming a forgotten directory.
           </p>
         </div>
-      </section>
 
-      {/* Stats/Quick Info */}
-      <section className="py-12 border-b border-white/10 bg-white/[0.02]">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div className="text-2xl font-bold text-yellow-200">∞</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Grid Size</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-yellow-200">$2.00</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Price / Pixel</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-yellow-200">365D</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Lease Term</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-yellow-200">100%</div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">Uptime</div>
+        <div className={styles.wallModel} aria-hidden="true">
+          <div className={styles.scanLine} />
+          {Array.from({ length: 96 }).map((_, index) => (
+            <span
+              key={index}
+              className={
+                index === 18 ||
+                index === 19 ||
+                index === 20 ||
+                index === 34 ||
+                index === 35 ||
+                index === 36 ||
+                index === 60 ||
+                index === 61
+                  ? styles.claimedCell
+                  : ""
+              }
+            />
+          ))}
+          <div className={styles.mapBadge}>
+            <MapPinned size={14} aria-hidden="true" />
+            Live coordinate map
           </div>
         </div>
       </section>
 
-      {/* Core Features - Landing Style */}
-      <section className="py-24 px-6 max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="space-y-4 group">
-            <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-yellow-200/50 transition-colors">
-              <Layers size={24} className="text-yellow-200" />
-            </div>
-            <h3 className="text-lg font-bold uppercase tracking-tight">Infinite Layers</h3>
-            <p className="text-xs text-white/50 leading-relaxed">
-              Our spatial engine handles coordinates beyond standard floating points. 
-              The wall isn't just a grid; it's a persistent, expanding universe.
-            </p>
-          </div>
+      <section className={styles.flowSection} aria-label="How buying works">
+        <div className={styles.flowHeader}>
+          <h2>Buying pixels should feel obvious</h2>
+          <p>
+            The whole flow is designed around confidence: pick the place, know
+            the price, reserve it, then publish a link people can actually click.
+          </p>
+        </div>
 
-          <div className="space-y-4 group">
-            <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-yellow-200/50 transition-colors">
-              <Target size={24} className="text-yellow-200" />
-            </div>
-            <h3 className="text-lg font-bold uppercase tracking-tight">Precision Selection</h3>
-            <p className="text-xs text-white/50 leading-relaxed">
-              Pixel-perfect precision. Select any rectangular region and claim it. 
-              Real-time quoting ensures you know exactly what you're buying.
-            </p>
-          </div>
+        <ol className={styles.flowTimeline}>
+          {flowSteps.map((step, index) => {
+            const Icon = step.icon;
 
-          <div className="space-y-4 group">
-            <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-yellow-200/50 transition-colors">
-              <Cpu size={24} className="text-yellow-200" />
+            return (
+              <li
+                key={step.title}
+                style={{ "--delay": `${index * 110}ms` } as CSSProperties}
+              >
+                <div className={styles.flowMarker}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <Icon aria-hidden="true" />
+                </div>
+                <div className={styles.flowStepCopy}>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section className={styles.ownershipSection} aria-label="What buyers get">
+        <div className={styles.purchaseCard}>
+          <div className={styles.purchaseTop}>
+            <span>Region preview</span>
+            <strong>128 x 64 px</strong>
+          </div>
+          <div className={styles.selectionPreview} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <dl>
+            <div>
+              <dt>Pixels</dt>
+              <dd>8,192</dd>
             </div>
-            <h3 className="text-lg font-bold uppercase tracking-tight">Automated Flow</h3>
-            <p className="text-xs text-white/50 leading-relaxed">
-              From selection to Stripe checkout to live publication. 
-              Our automated moderation queue keeps the wall clean and functional.
-            </p>
+            <div>
+              <dt>Lease</dt>
+              <dd>365 days</dd>
+            </div>
+            <div>
+              <dt>Rate</dt>
+              <dd>$2 / pixel</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className={styles.ownershipCopy}>
+          <span>What you get</span>
+          <h2>Not a banner impression, a place people can point to</h2>
+          <div>
+            {ownership.map((item) => (
+              <p key={item}>
+                <CheckCircle2 size={18} aria-hidden="true" />
+                {item}
+              </p>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Final Call to Action */}
-      <section className="px-6">
-        <div className="max-w-4xl mx-auto p-12 border border-yellow-200/20 bg-yellow-200/5 text-center space-y-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-2 bg-yellow-200" />
-          <div className="absolute top-0 right-0 w-2 h-2 bg-yellow-200" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 bg-yellow-200" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 bg-yellow-200" />
-          
-          <h2 className="text-2xl md:text-4xl font-bold uppercase tracking-tighter">
-            Ready to claim your piece of history?
-          </h2>
-          <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-            <Link 
-              href="/#buy" 
-              className="px-8 py-3 bg-yellow-200 text-black font-bold uppercase text-xs tracking-[0.2em] hover:bg-white transition-colors"
-            >
-              Enter the Grid
-            </Link>
-            <Link 
-              href="/faq" 
-              className="px-8 py-3 border border-white/20 text-white font-bold uppercase text-xs tracking-[0.2em] hover:bg-white/10 transition-colors"
-            >
-              Read Documentation
-            </Link>
-          </div>
+      <section className={styles.integritySection} aria-label="Why leases matter">
+        <div className={styles.integrityIcon}>
+          <ShieldCheck size={34} aria-hidden="true" />
         </div>
-      </section>
-
-      {/* Technical Footer */}
-      <section className="mt-24 text-center px-6">
-        <p className="text-[9px] uppercase tracking-[0.4em] text-white/20">
-          Transmission encrypted // Protocol 8-BIT-SECURE // No rights reserved
+        <h2>The wall should stay alive, not slowly rot</h2>
+        <p>
+          Permanent ad directories decay when links die and owners disappear.
+          Time-boxed leases make the wall easier to keep current: expired space
+          can come back, active buyers stay visible, and visitors are more likely
+          to find links that still matter
         </p>
+      </section>
+
+      <section className={styles.useCaseSection} aria-label="Use cases">
+        <div>
+          <Sparkles size={20} aria-hidden="true" />
+          <h2>Use it when a normal link feels too invisible</h2>
+        </div>
+        <div className={styles.marquee} aria-hidden="true">
+          <div>
+            {[...useCases, ...useCases].map((item, index) => (
+              <span key={`${item}-${index}`}>{item}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.finalCta}>
+        <h2>Find a square, make it yours</h2>
+        <Link href="/#buy" className={styles.primaryAction}>
+          Claim pixels
+          <ArrowRight size={17} aria-hidden="true" />
+        </Link>
       </section>
     </main>
   );
 }
-

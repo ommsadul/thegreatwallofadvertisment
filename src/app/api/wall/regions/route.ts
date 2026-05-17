@@ -5,6 +5,7 @@ import {
   getSupabaseAdminClient,
   hasSupabaseServiceEnv,
 } from "@/lib/supabase/server";
+import { integerLikeToSafeNumber } from "@/lib/wall/serialization";
 
 type RegionPayload = {
   x1: bigint;
@@ -27,21 +28,6 @@ type RegionRow = {
   } | null;
 };
 
-function toNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
 function mapToRegionRows(
   input: Array<Record<string, unknown>>,
   state: "sold" | "pending",
@@ -56,10 +42,10 @@ function mapToRegionRows(
 ): RegionRow[] {
   return input
     .map((row) => {
-      const x1 = toNumber(row.x1);
-      const y1 = toNumber(row.y1);
-      const x2 = toNumber(row.x2);
-      const y2 = toNumber(row.y2);
+      const x1 = integerLikeToSafeNumber(row.x1);
+      const y1 = integerLikeToSafeNumber(row.y1);
+      const x2 = integerLikeToSafeNumber(row.x2);
+      const y2 = integerLikeToSafeNumber(row.y2);
 
       if (
         typeof row.id !== "string" ||

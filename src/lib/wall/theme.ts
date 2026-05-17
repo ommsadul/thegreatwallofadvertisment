@@ -1,0 +1,16 @@
+export const WALL_CANVAS_THEME = {
+  background: "#f7f7f5",
+  truePixelLine: "rgba(17,17,17,0.16)",
+  microLine: "rgba(17,17,17,0.055)",
+  guideDot: "rgba(17,17,17,0.2)",
+  overviewDot: "rgba(17,17,17,0.15)",
+  tenPixelDot: "rgba(0,87,255,0.34)",
+  pendingFill: "rgba(196,154,0,0.22)",
+  pendingStroke: "rgba(138,90,0,0.34)",
+  soldFill: "#ffffff",
+  soldStroke: "rgba(17,17,17,0.2)",
+  selectionFill: "rgba(0,87,255,0.18)",
+  selectionStroke: "#0057ff",
+  text: "#111111",
+  mutedText: "#6b6b68",
+} as const;

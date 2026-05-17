@@ -8,6 +8,7 @@ Problem Statement continues.jpg
 # AI Agent files
 AGENTS.md
 CLAUDE.md
+frontend-design.md
 
 # dependencies
 node_modules/
@@ -21,6 +22,9 @@ node_modules/
 
 # testing
 coverage/
+.tmp-tests/
+test-results/
+playwright-report/
 
 # next.js
 .next/

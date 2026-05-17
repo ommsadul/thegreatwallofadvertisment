@@ -1,115 +1,192 @@
 import Link from "next/link";
-import { MessageSquare, HelpCircle, ChevronRight, Mail } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  HelpCircle,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import styles from "./faq.module.css";
 
 const faqs = [
   {
+    category: "Lease",
     q: "How long does my ad stay on the wall?",
-    a: "Every pixel purchase includes a 1-year lease. After one year, the region becomes available for purchase again unless renewed."
+    a: "Every pixel purchase includes a one-year lease. After the lease ends, the region can become available again unless renewal support is added before then.",
   },
   {
+    category: "Pricing",
+    q: "How much does a region cost?",
+    a: "The current rate is $2 per pixel. Your quote is based on the width and height of the rectangle you select, so you can see the price before reserving anything.",
+  },
+  {
+    category: "Checkout",
+    q: "Why do I need to reserve before paying?",
+    a: "A reservation temporarily locks your selected coordinates so another buyer cannot take the same region while you are preparing checkout details.",
+  },
+  {
+    category: "Publishing",
+    q: "What happens after payment?",
+    a: "After successful payment finalization, the stored ad preview is published to the wall with its destination link.",
+  },
+  {
+    category: "Edits",
     q: "Can I change my ad image or link later?",
-    a: "Currently, ad submissions are final once approved. We are working on a dashboard feature to allow users to manage their active regions."
+    a: "For this version, ad details are treated as final once payment is complete. A future buyer dashboard could make active regions easier to manage.",
   },
   {
+    category: "Policy",
     q: "What kind of content is allowed?",
-    a: "We allow most legal content. However, we reserve the right to reject ads that contain explicit material, hate speech, or malicious links. If rejected, you will receive a full refund."
+    a: "Legal, safe, non-malicious content is the baseline. Explicit material, hate speech, malicious links, or unsafe destinations can be rejected and refunded.",
   },
   {
-    q: "How does the 'Infinite' grid work?",
-    a: "Unlike the original 1000x1000 board, our system uses arbitrary-precision coordinates. This means the board can expand in any direction indefinitely as users purchase new space."
+    category: "Grid",
+    q: "How does the infinite wall work?",
+    a: "The wall uses coordinates in every direction instead of a fixed board, so space can expand as more regions are claimed.",
   },
   {
-    q: "I paid but my ad isn't showing up yet.",
-    a: "Ads usually appear instantly after successful payment. If you don't see it, try refreshing the page. If it still hasn't appeared after 10 minutes, please contact support."
-  }
+    category: "Support",
+    q: "I paid but do not see my ad yet.",
+    a: "Refresh the wall first. If checkout completed and the placement still has not appeared after 10 minutes, contact support with the email used during checkout.",
+  },
+];
+
+const quickFacts = [
+  {
+    icon: CreditCard,
+    title: "$2 per pixel",
+    text: "Flat pricing before checkout",
+  },
+  {
+    icon: Clock3,
+    title: "365-day lease",
+    text: "Time-boxed so the wall stays fresh",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Content review",
+    text: "Unsafe links can be rejected",
+  },
 ];
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen bg-black text-white/90 font-mono selection:bg-yellow-200 selection:text-black pb-24">
-      {/* Background Grid Effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03]" 
-           style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
-      />
-
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 border-b border-white/10 overflow-hidden bg-white/[0.01]">
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-200/10 border border-yellow-200/30 text-yellow-200 text-[10px] uppercase tracking-[0.3em] mb-4">
-            <HelpCircle size={12} />
-            Support Terminal
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter leading-none">
-            Frequently Asked <br />
-            <span className="text-yellow-200 underline decoration-4 underline-offset-8">Questions</span>
-          </h1>
-          <p className="max-w-xl mx-auto text-sm text-white/60 leading-relaxed pt-4">
-            Everything you need to know about claiming your spot on the wall. 
-            Can't find what you're looking for? Reach out to our operators.
-          </p>
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroIcon}>
+          <HelpCircle size={24} aria-hidden="true" />
         </div>
+        <h1>Answers before you claim your pixels</h1>
+        <p>
+          Clear notes on pricing, leases, reservations, checkout, allowed
+          content, and what happens after your ad goes live.
+        </p>
       </section>
 
-      {/* FAQ Grid Section */}
-      <section className="py-24 px-6 max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {faqs.map((faq, index) => (
-            <div key={index} className="space-y-4 group p-6 border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all relative">
-              <div className="absolute top-0 left-0 w-1 h-1 bg-yellow-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="text-yellow-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                <span>QUERY // 0{index + 1}</span>
-                <ChevronRight size={10} />
-              </div>
-              <h3 className="text-lg font-bold uppercase tracking-tight text-white group-hover:text-yellow-200 transition-colors leading-tight">
-                {faq.q}
-              </h3>
-              <p className="text-xs text-white/50 leading-relaxed">
-                {faq.a}
-              </p>
+      <section className={styles.quickFacts} aria-label="Quick facts">
+        <Card className={styles.factsCard} size="sm">
+          <CardHeader className={styles.factsHeader}>
+            <div className={styles.factsIntro}>
+              <CardTitle>Before you claim</CardTitle>
+              <CardDescription>
+                The core rules are intentionally simple so the wall stays easy
+                to understand before checkout.
+              </CardDescription>
             </div>
+            <CardAction>
+              <Badge variant="secondary" className={styles.factsBadge}>
+                Claim rules
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className={styles.factsContent}>
+            {quickFacts.map((fact, index) => {
+              const Icon = fact.icon;
+
+              return (
+                <div key={fact.title} className={styles.factItem}>
+                  <div className={styles.factIcon}>
+                    <Icon aria-hidden="true" />
+                  </div>
+                  <div className={styles.factCopy}>
+                    <h2>{fact.title}</h2>
+                    <p>{fact.text}</p>
+                  </div>
+                  {index < quickFacts.length - 1 ? (
+                    <Separator
+                      orientation="vertical"
+                      className={styles.factRule}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className={styles.faqShell} aria-label="Frequently asked questions">
+        <aside>
+          <span>FAQ</span>
+          <h2>Everything important in one place</h2>
+          <p>
+            Start here if you are choosing a region, checking price, or trying
+            to understand what you are buying.
+          </p>
+          <Link href="/about">
+            Read the project story
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </aside>
+
+        <div className={styles.faqList}>
+          {faqs.map((faq, index) => (
+            <details key={faq.q} open={index === 0}>
+              <summary>
+                <span>{faq.category}</span>
+                <strong>{faq.q}</strong>
+                <ArrowRight size={18} aria-hidden="true" />
+              </summary>
+              <p>{faq.a}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="px-6 py-20 bg-white/[0.02] border-y border-white/10">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <div className="w-16 h-16 bg-yellow-200 text-black mx-auto flex items-center justify-center">
-            <Mail size={32} />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold uppercase tracking-tighter text-white">
-              Still Have Questions?
-            </h2>
-            <p className="text-sm text-white/50">
-              Our support terminal is active 24/7. Send us an encrypted message.
-            </p>
-          </div>
-          <a 
-            href="mailto:support@2milliondollarwall.com" 
-            className="inline-block px-10 py-4 bg-white text-black font-bold uppercase text-xs tracking-[0.2em] hover:bg-yellow-200 transition-colors shadow-lg shadow-white/5"
-          >
-            Contact Support
-          </a>
+      <section className={styles.supportSection}>
+        <div className={styles.supportIcon}>
+          <Mail size={25} aria-hidden="true" />
         </div>
+        <h2>Still need help?</h2>
+        <p>
+          Send the email used during checkout, your destination link, selected
+          coordinates if you remember them, and a short description of the issue.
+        </p>
+        <a href="mailto:support@2milliondollarwall.com">
+          Contact support
+          <ArrowRight size={17} aria-hidden="true" />
+        </a>
       </section>
 
-      {/* Quick Links Section */}
-      <section className="py-20 px-6 text-center space-y-12">
-        <div className="flex flex-wrap justify-center gap-8">
-          <Link href="/about" className="text-[10px] uppercase tracking-widest text-white/40 hover:text-yellow-200 transition-colors flex items-center gap-2">
-            <div className="w-1 h-1 bg-yellow-200" />
-            About Project
-          </Link>
-          <Link href="/" className="text-[10px] uppercase tracking-widest text-white/40 hover:text-yellow-200 transition-colors flex items-center gap-2">
-            <div className="w-1 h-1 bg-yellow-200" />
-            Main Wall
-          </Link>
-        </div>
-        
-        <p className="text-[9px] uppercase tracking-[0.4em] text-white/20">
-          Transmission end // Documentation ID: FAQ-V1.0.4 // Grid Status: Active
-        </p>
+      <section className={styles.finalCta}>
+        <CheckCircle2 size={22} aria-hidden="true" />
+        <h2>Ready when your region is</h2>
+        <Link href="/#buy">
+          Claim pixels
+          <ArrowRight size={17} aria-hidden="true" />
+        </Link>
       </section>
     </main>
   );

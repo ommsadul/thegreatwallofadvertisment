@@ -1,27 +1,26 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk, Geist } from "next/font/google";
+import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import { Navigation } from "@/components/Navigation";
 
 const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-space-grotesk",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  weight: ["400", "500"],
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-ibm-plex-mono",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "2 Million Dollar Wall",
-  description: "Position-priced pixel ad wall MVP",
+  title: "thegreatwallofadvertisment",
+  description: "Claim visible internet space on an infinite pixel ad wall.",
 };
-
-import { Navigation } from "@/components/Navigation";
 
 export default function RootLayout({
   children,
@@ -31,7 +30,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", spaceGrotesk.variable, ibmPlexMono.variable, "font-sans", geist.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        "font-sans",
+        spaceGrotesk.variable,
+        ibmPlexMono.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
         <Navigation />

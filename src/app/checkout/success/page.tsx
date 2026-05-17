@@ -3,6 +3,7 @@ import Link from "next/link";
 import { finalizeCheckoutSession } from "@/lib/payments/finalize-checkout-session";
 import { getStripeServerClient, hasStripeEnv } from "@/lib/stripe/server";
 import { hasSupabaseServiceEnv } from "@/lib/supabase/server";
+import styles from "../checkout.module.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,16 +18,16 @@ export default async function CheckoutSuccessPage({
   const { session_id: sessionId } = await searchParams;
 
   let finalizeMessage = "We are finalizing your ad placement.";
-  let finalizeMessageClass = "text-emerald-950";
+  let status: "success" | "warning" | "error" = "success";
 
   if (!sessionId) {
     finalizeMessage =
-      "Missing checkout session id in URL. If payment was successful, contact support with your email.";
-    finalizeMessageClass = "text-amber-950";
+      "We could not confirm the checkout return link. If payment was successful, contact support with the email used at checkout.";
+    status = "warning";
   } else if (!hasStripeEnv() || !hasSupabaseServiceEnv()) {
     finalizeMessage =
       "Server payment environment is incomplete, so auto-finalization on this page is unavailable.";
-    finalizeMessageClass = "text-amber-950";
+    status = "warning";
   } else {
     try {
       const stripe = getStripeServerClient();
@@ -38,44 +39,73 @@ export default async function CheckoutSuccessPage({
           finalizeResult.state === "already-finalized"
             ? "Your ad was already finalized and should now appear on the wall."
             : "Your ad has been finalized and should now appear on the wall.";
-        finalizeMessageClass = "text-emerald-950";
+        status = "success";
       } else if (finalizeResult.state === "waiting-payment") {
         finalizeMessage =
           "Payment confirmation is still processing. Refresh this page in a few seconds.";
-        finalizeMessageClass = "text-amber-950";
+        status = "warning";
       } else {
         finalizeMessage = finalizeResult.message;
-        finalizeMessageClass = "text-rose-950";
+        status = "error";
       }
     } catch (error) {
       finalizeMessage =
         error instanceof Error
           ? `Could not finalize session on return: ${error.message}`
           : "Could not finalize session on return.";
-      finalizeMessageClass = "text-rose-950";
+      status = "error";
     }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-6 py-16 text-emerald-950">
-      <div className="rounded-2xl border border-emerald-300/30 bg-emerald-50 p-6">
-        <h1 className="text-2xl font-semibold text-emerald-950">Payment received</h1>
-        <p className="mt-3 text-sm text-emerald-900">
-          Your reservation payment has been captured. We now auto-publish your
-          ad placement after payment finalization.
-        </p>
-        <p className={`mt-3 text-sm font-medium ${finalizeMessageClass}`}>{finalizeMessage}</p>
-        <p className="mt-3 text-xs text-emerald-800">Session: {sessionId ?? "N/A"}</p>
+    <main className={styles.checkoutPage}>
+      <section className={styles.shell}>
+        <div className={`${styles.panel} ${styles[status]}`}>
+          <div className={styles.panelInner}>
+            <span className={styles.statusPill}>
+              <span className={styles.statusDot} />
+              Payment received
+            </span>
+            <h1 className={styles.title}>Your pixels are being placed.</h1>
+            <p className={styles.description}>
+              The payment is complete. We now publish your stored ad preview to
+              the wall and make the selected region live for its lease period.
+            </p>
+            <p className={styles.message}>{finalizeMessage}</p>
 
-        <div className="mt-5">
-          <Link
-            href="/"
-            className="inline-flex rounded-md border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-xs font-semibold text-emerald-950 transition hover:bg-emerald-600/20"
-          >
-            Back to Pixel Sheet
-          </Link>
+            <div className={styles.steps} aria-label="Placement progress">
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>1</span>
+                <p className={styles.stepTitle}>Payment captured</p>
+                <p className={styles.stepText}>Stripe confirmed the checkout.</p>
+              </div>
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>2</span>
+                <p className={styles.stepTitle}>Preview published</p>
+                <p className={styles.stepText}>The stored ad draft is attached.</p>
+              </div>
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>3</span>
+                <p className={styles.stepTitle}>Region live</p>
+                <p className={styles.stepText}>The wall now renders the placement.</p>
+              </div>
+            </div>
+
+            <div className={styles.actions}>
+              <Link href="/" className={styles.primaryAction}>
+                Back to wall
+              </Link>
+              <Link href="/faq" className={styles.secondaryAction}>
+                Read FAQ
+              </Link>
+            </div>
+            <p className={styles.supportNote}>
+              For support, use the email from checkout. Internal payment and
+              reservation IDs are kept in the system, not shown here.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

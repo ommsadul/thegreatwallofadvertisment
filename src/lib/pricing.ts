@@ -4,8 +4,8 @@ import {
   pixelCount,
   pixelCountBigInt,
   PixelRectBigInt,
-} from "@/lib/selection";
-import { PixelRect, PRICE_PER_PIXEL_CENTS } from "@/lib/pricing-zones";
+} from "./selection";
+import { PixelRect, PRICE_PER_PIXEL_CENTS } from "./pricing-zones";
 
 export type RegionQuote = {
   selection: PixelRect;

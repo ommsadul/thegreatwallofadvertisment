@@ -1,7 +1,7 @@
 import {
   MAX_PURCHASE_PIXELS,
   PixelRect,
-} from "@/lib/pricing-zones";
+} from "./pricing-zones";
 
 const MAX_SAFE_INT_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
 

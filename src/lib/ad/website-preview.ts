@@ -1,3 +1,6 @@
+import dns from "node:dns/promises";
+import net from "node:net";
+
 export type WebsitePreview = {
   headline: string | null;
   imageUrl: string | null;
@@ -6,21 +9,25 @@ export type WebsitePreview = {
   warning: string | null;
 };
 
-function normalizeTargetUrl(targetUrl: string): string | null {
+const MAX_REDIRECTS = 5;
+const DEFAULT_USER_AGENT =
+  "TheGreatWallOfAdvertisementBot/1.0 (+https://thegreatwallofadvertisment.com)";
+
+function parseTargetUrl(targetUrl: string): URL | null {
   try {
-    return new URL(targetUrl).toString();
+    return new URL(targetUrl);
   } catch {
     return null;
   }
 }
 
 export function buildWebsiteScreenshotUrl(targetUrl: string): string | null {
-  const normalized = normalizeTargetUrl(targetUrl);
-  if (!normalized) {
+  const parsed = parseTargetUrl(targetUrl);
+  if (!parsed || !isAllowedProtocol(parsed) || isBlockedHostname(parsed.hostname)) {
     return null;
   }
 
-  return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(normalized)}?w=1200`;
+  return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(parsed.toString())}?w=1200`;
 }
 
 function normalizeUrl(baseUrl: string, maybeRelative: string): string | null {
@@ -79,19 +86,162 @@ function extractFavicon(html: string): string | null {
   return null;
 }
 
+function decodeHtmlText(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isAllowedProtocol(url: URL): boolean {
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+function isBlockedHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/\.$/, "");
+
+  return (
+    normalized === "localhost" ||
+    normalized.endsWith(".localhost") ||
+    normalized === "0" ||
+    normalized === "0.0.0.0" ||
+    normalized === "::" ||
+    normalized === "::1" ||
+    normalized.endsWith(".local")
+  );
+}
+
+function isBlockedIpAddress(address: string): boolean {
+  const ipVersion = net.isIP(address);
+
+  if (ipVersion === 0) {
+    return false;
+  }
+
+  if (ipVersion === 4) {
+    const [a = 0, b = 0] = address.split(".").map(Number);
+
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127)
+    );
+  }
+
+  const normalized = address.toLowerCase();
+
+  return (
+    normalized === "::" ||
+    normalized === "::1" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:") ||
+    normalized.startsWith("::ffff:10.") ||
+    normalized.startsWith("::ffff:127.") ||
+    normalized.startsWith("::ffff:169.254.") ||
+    normalized.startsWith("::ffff:192.168.")
+  );
+}
+
+export async function assertPublicHttpUrl(targetUrl: string): Promise<URL | null> {
+  const parsed = parseTargetUrl(targetUrl);
+  if (!parsed || !isAllowedProtocol(parsed) || parsed.username || parsed.password) {
+    return null;
+  }
+
+  if (isBlockedHostname(parsed.hostname)) {
+    return null;
+  }
+
+  const ipVersion = net.isIP(parsed.hostname);
+  if (ipVersion !== 0) {
+    return isBlockedIpAddress(parsed.hostname) ? null : parsed;
+  }
+
+  try {
+    const addresses = await dns.lookup(parsed.hostname, { all: true, verbatim: true });
+    if (
+      addresses.length === 0 ||
+      addresses.some(({ address }) => isBlockedIpAddress(address))
+    ) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return parsed;
+}
+
+export async function fetchPublicResource(
+  initialUrl: URL,
+  signal: AbortSignal,
+  headers: HeadersInit,
+): Promise<Response> {
+  let currentUrl = initialUrl;
+
+  for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
+    const response = await fetch(currentUrl, {
+      method: "GET",
+      redirect: "manual",
+      signal,
+      headers,
+    });
+
+    if (![301, 302, 303, 307, 308].includes(response.status)) {
+      return response;
+    }
+
+    const location = response.headers.get("location");
+    if (!location) {
+      return response;
+    }
+
+    const nextUrl = await assertPublicHttpUrl(new URL(location, currentUrl).toString());
+    if (!nextUrl) {
+      throw new Error("Redirect target is not allowed.");
+    }
+
+    currentUrl = nextUrl;
+  }
+
+  throw new Error("Too many redirects.");
+}
+
+async function fetchPublicHtml(
+  initialUrl: URL,
+  signal: AbortSignal,
+): Promise<Response> {
+  return fetchPublicResource(initialUrl, signal, {
+    "User-Agent": DEFAULT_USER_AGENT,
+    Accept: "text/html,application/xhtml+xml",
+  });
+}
+
 export async function fetchWebsitePreview(
   targetUrl: string,
   timeoutMs = 7000,
 ): Promise<WebsitePreview> {
-  const screenshotUrl = buildWebsiteScreenshotUrl(targetUrl);
+  const safeTargetUrl = await assertPublicHttpUrl(targetUrl);
+  const screenshotUrl = safeTargetUrl
+    ? buildWebsiteScreenshotUrl(safeTargetUrl.toString())
+    : null;
 
-  if (!/^https?:\/\//i.test(targetUrl)) {
+  if (!safeTargetUrl) {
     return {
       headline: null,
       imageUrl: null,
       faviconUrl: null,
       screenshotUrl,
-      warning: "URL must start with http or https.",
+      warning: "URL must be a public http or https website.",
     };
   }
 
@@ -99,15 +249,7 @@ export async function fetchWebsitePreview(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(targetUrl, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "2MillionDollarWallBot/1.0 (+http://localhost)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
+    const response = await fetchPublicHtml(safeTargetUrl, controller.signal);
 
     clearTimeout(timeout);
 
@@ -136,14 +278,21 @@ export async function fetchWebsitePreview(
     const finalUrl = response.url;
 
     const ogTitle = extractMetaContent(html, "og:title");
-    const ogImage = extractMetaContent(html, "og:image");
-    const twitterImage = extractMetaContent(html, "twitter:image");
+    const ogImage =
+      extractMetaContent(html, "og:image:secure_url") ??
+      extractMetaContent(html, "og:image");
+    const twitterImage =
+      extractMetaContent(html, "twitter:image:src") ??
+      extractMetaContent(html, "twitter:image");
     const title = extractTitle(html);
     const favicon = extractFavicon(html);
 
     return {
-      headline: ogTitle || title || null,
-      imageUrl: ogImage || twitterImage ? normalizeUrl(finalUrl, ogImage || twitterImage || "") : null,
+      headline: ogTitle || title ? decodeHtmlText(ogTitle || title || "") : null,
+      imageUrl:
+        ogImage || twitterImage
+          ? normalizeUrl(finalUrl, ogImage || twitterImage || "")
+          : null,
       faviconUrl: favicon ? normalizeUrl(finalUrl, favicon) : null,
       screenshotUrl,
       warning: null,

@@ -70,13 +70,7 @@ export async function POST(request: NextRequest) {
       imageUrl: body.imageUrl,
     });
 
-    return NextResponse.json({
-      draftId: draft.id,
-      headline: draft.headline,
-      imageUrl: draft.imageUrl,
-      warning: draft.warning,
-      draft,
-    });
+    return NextResponse.json({ draft }, { status: 201 });
   } catch (error) {
     if (error instanceof AdDraftInputError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
@@ -84,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Auto-fill failed.",
+        error: "Failed to prepare ad preview.",
         details: error instanceof Error ? error.message : "Unknown error.",
       },
       { status: 500 },
