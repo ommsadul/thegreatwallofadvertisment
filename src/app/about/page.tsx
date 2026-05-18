@@ -84,7 +84,7 @@ export default function AboutPage() {
       <section className={styles.ideaSection} aria-label="Why the wall exists">
         <div className={styles.sectionCopy}>
           <span>Why it exists</span>
-          <h2>A simple internet stunt, rebuilt as a usable ad map</h2>
+          <h2>A simple internet protocol, rebuilt as a usable ad map</h2>
           <p>
             The original pixel-wall idea was powerful because anyone could
             understand it: buy a visible square, add a link, and become part of
